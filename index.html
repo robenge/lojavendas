@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModaStyle - Loja de Roupas Premium</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">
+                <h1>ModaStyle</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#sobre">Sobre</a></li>
+                <li><a href="#produtos">Produtos</a></li>
+                <li><a href="#contato">Contato</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Moda que Transforma</h1>
+            <p>Descubra as últimas tendências da moda com qualidade e estilo incomparáveis</p>
+            <button class="cta-button" onclick="scrollToSection('produtos')">Ver Coleção</button>
+        </div>
+    </section>
+
+    <!-- Sobre -->
+    <section id="sobre" class="sobre">
+        <div class="container">
+            <h2>Sobre Nossa Loja</h2>
+            <div class="sobre-content">
+                <div class="sobre-text">
+                    <p>Há mais de 10 anos no mercado, a ModaStyle traz as melhores tendências da moda com qualidade incomparável. Nossa missão é oferecer peças que combinam estilo, conforto e durabilidade.</p>
+                    <p>Trabalhamos com os melhores fornecedores e matérias-primas para garantir que cada peça seja especial e única.</p>
+                    <div class="destaques">
+                        <div class="destaque">
+                            <span class="destaque-icon">⭐</span>
+                            <span>Qualidade Premium</span>
+                        </div>
+                        <div class="destaque">
+                            <span class="destaque-icon">🚚</span>
+                            <span>Entrega Rápida</span>
+                        </div>
+                        <div class="destaque">
+                            <span class="destaque-icon">💎</span>
+                            <span>Design Exclusivo</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sobre-image">
+                    <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Nossa loja física">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Produtos -->
+    <section id="produtos" class="produtos">
+        <div class="container">
+            <h2>Nossos Produtos</h2>
+            <p class="section-subtitle">Descubra nossa coleção cuidadosamente selecionada</p>
+            <div class="produtos-grid">
+                <div class="produto-card">
+                    <div class="produto-image">
+                        <img src="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Camisetas">
+                    </div>
+                    <h3>Camisetas</h3>
+                    <p>Conforto e estilo no dia a dia</p>
+                    <span class="preco">R$ 49,90</span>
+                    <button class="produto-btn">Adicionar ao Carrinho</button>
+                </div>
+                <div class="produto-card">
+                    <div class="produto-image">
+                        <img src="https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Calças">
+                    </div>
+                    <h3>Calças</h3>
+                    <p>Elegância para qualquer ocasião</p>
+                    <span class="preco">R$ 129,90</span>
+                    <button class="produto-btn">Adicionar ao Carrinho</button>
+                </div>
+                <div class="produto-card">
+                    <div class="produto-image">
+                        <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Vestidos">
+                    </div>
+                    <h3>Vestidos</h3>
+                    <p>Feminilidade e sofisticação</p>
+                    <span class="preco">R$ 159,90</span>
+                    <button class="produto-btn">Adicionar ao Carrinho</button>
+                </div>
+                <div class="produto-card">
+                    <div class="produto-image">
+                        <img src="https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Acessórios">
+                    </div>
+                    <h3>Acessórios</h3>
+                    <p>Detalhes que fazem a diferença</p>
+                    <span class="preco">R$ 39,90</span>
+                    <button class="produto-btn">Adicionar ao Carrinho</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato" class="contato">
+        <div class="container">
+            <h2>Entre em Contato</h2>
+            <p class="section-subtitle">Estamos aqui para ajudar você</p>
+            <div class="contato-content">
+                <div class="contato-info">
+                    <h3>Informações de Contato</h3>
+                    <div class="contato-item">
+                        <span class="contato-icon">📍</span>
+                        <div>
+                            <strong>Endereço:</strong>
+                            <p>Rua da Moda, 123 - Centro, São Paulo - SP</p>
+                        </div>
+                    </div>
+                    <div class="contato-item">
+                        <span class="contato-icon">📞</span>
+                        <div>
+                            <strong>Telefone:</strong>
+                            <p>(11) 9999-9999</p>
+                        </div>
+                    </div>
+                    <div class="contato-item">
+                        <span class="contato-icon">✉️</span>
+                        <div>
+                            <strong>Email:</strong>
+                            <p>contato@modastyle.com</p>
+                        </div>
+                    </div>
+                    <div class="contato-item">
+                        <span class="contato-icon">🕒</span>
+                        <div>
+                            <strong>Horário:</strong>
+                            <p>Segunda a Sexta - 9h às 18h<br>Sábado - 9h às 13h</p>
+                        </div>
+                    </div>
+                </div>
+                <form class="contato-form" id="contactForm">
+                    <h3>Envie uma Mensagem</h3>
+                    <div class="form-group">
+                        <input type="text" placeholder="Seu nome completo" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" placeholder="Seu melhor email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" placeholder="Seu telefone">
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="Sua mensagem" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="form-btn">Enviar Mensagem</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Portfolio -->
+    <section class="download-portfolio">
+        <div class="container">
+            <div class="download-content">
+                <h2>🎨 Portfólio Completo - BI3-9-0015</h2>
+                
+                <div class="download-info">
+                    <p>📊 <strong>Arquivo dividido em 3 partes para download rápido</strong></p>
+                    <p>Baixe todas as partes e extraia para obter o portfólio completo</p>
+                </div>
+                
+                <div class="files-grid">
+                    <div class="file-card">
+                        <div class="file-icon">📦</div>
+                        <h3>Parte 1</h3>
+                        <p class="file-size">≈35MB</p>
+                        <a href="bi3-9-0015.part1.rar" download class="download-btn">
+                            📥 Baixar bi3-9-0015.part1
+                        </a>
+                    </div>
+                    
+                    <div class="file-card">
+                        <div class="file-icon">📦</div>
+                        <h3>Parte 2</h3>
+                        <p class="file-size">≈35MB</p>
+                        <a href="bi3-9-0015.part2.rar" download class="download-btn">
+                            📥 Baixar bi3-9-0015.part2
+                        </a>
+                    </div>
+                    
+                    <div class="file-card">
+                        <div class="file-icon">📦</div>
+                        <h3>Parte 3</h3>
+                        <p class="file-size">≈32MB</p>
+                        <a href="bi3-9-0015.part3.rar" download class="download-btn">
+                            📥 Baixar bi3-9-0015.part3
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="extraction-guide">
+                    <h4>🔧 Como Extrair o Portfólio:</h4>
+                    <div class="steps">
+                        <div class="step">
+                            <span class="step-number">1</span>
+                            <div class="step-content">
+                                <strong>Baixe todos os arquivos</strong>
+                                <p>bi3-9-0015.part1, .part2 e .part3</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">2</span>
+                            <div class="step-content">
+                                <strong>Instale o 7-Zip (gratuito)</strong>
+                                <p><a href="https://www.7-zip.org/" target="_blank">www.7-zip.org</a></p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">3</span>
+                            <div class="step-content">
+                                <strong>Clique com botão direito no .part1</strong>
+                                <p>"7-Zip" → "Extrair aqui"</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">4</span>
+                            <div class="step-content">
+                                <strong>Execute o arquivo extraído</strong>
+                                <p>O portfólio estará pronto para uso</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="backup-option">
+                    <p>🌐 <strong>Problemas com a extração?</strong></p>
+                    <a href="https://drive.google.com/your-link-aqui" 
+                       target="_blank" 
+                       class="backup-link">
+                        📥 Baixar versão completa via Google Drive
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>ModaStyle</h3>
+                    <p>Moda de qualidade para você se expressar com estilo e confiança.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links Rápidos</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#sobre">Sobre</a></li>
+                        <li><a href="#produtos">Produtos</a></li>
+                        <li><a href="#contato">Contato</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Redes Sociais</h4>
+                    <div class="social-links">
+                        <a href="#">📘 Facebook</a>
+                        <a href="#">📷 Instagram</a>
+                        <a href="#">🐦 Twitter</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 ModaStyle. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
