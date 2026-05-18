@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Monitor PRO | Infraestrutura em Tempo Real</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ========== CSS COMPLETO (baseado no seu estilo + grid/barras) ========== */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        /* topo e indicadores */
+        .topbar {
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .kpi {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            min-width: 200px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .kpi span {
+            font-size: 32px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .danger {
+            border: 2px solid #ef4444;
+        }
+
+        /* grid de cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        /* card individual */
+        .card {
+            background: #1e293b;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: transform 0.1s ease;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+        }
+
+        /* barras */
+        .bar {
+            width: 100%;
+            height: 10px;
+            background: #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 8px 0 12px 0;
+        }
+
+        .bar div {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s ease;
+        }
+
+        /* textos de status */
+        .ok {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .alert {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        hr {
+            border-color: #334155;
+            margin: 12px 0;
+        }
+
+        small {
+            display: block;
+            margin-top: 12px;
+            color: #94a3b8;
+            font-size: 0.7rem;
+            text-align: right;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 220px !important;
+            margin: 10px 0;
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        /* responsividade */
+        @media (max-width: 640px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi {
+                min-width: 100%;
+            }
+            body {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>🖥️ Monitoramento PRO · Tempo Real</h1>
+    <div class="stats">
+        <div class="kpi" id="criticalKpi">
+            ⚠️ Máquinas Críticas
+            <span id="criticalMachines">0</span>
+        </div>
+        <div class="kpi">
+            📡 Atualização
+            <span>3 segundos</span>
+        </div>
+    </div>
+</div>
+
+<!-- Container onde os cards serão injetados (classe .grid) -->
+<div id="machines" class="grid"></div>
+
+<script>
+    // ======================= app.js COMPLETO =======================
+    // (adaptado para usar endpoint /machines e /history/{machine})
+
+    const charts = {};
+    const loadedHistory = new Set();
+
+    function sanitizeId(name) {
+        return name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+
+    async function loadHistory(machineName) {
+        const safeId = sanitizeId(machineName);
+        const canvas = document.getElementById(`chart-${safeId}`);
+        if (!canvas) return;
+
+        if (charts[safeId]) {
+            charts[safeId].destroy();
+        }
+
+        try {
+            const res = await fetch(`/history/${encodeURIComponent(machineName)}`);
+            if (!res.ok) {
+                console.warn(`Histórico não disponível para ${machineName}: ${res.status}`);
+                return;
+            }
+            const data = await res.json();
+
+            if (!data.length) {
+                console.log(`Sem dados históricos para ${machineName}`);
+                return;
+            }
+
+            const labels = data.map(x => new Date(x.timestamp).toLocaleTimeString());
+            const cpu = data.map(x => x.cpu);
+            const ping = data.map(x => x.ping);
+            const jitter = data.map(x => x.jitter || 0);
+
+            const ctx = canvas.getContext('2d');
+            charts[safeId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'CPU %', data: cpu, borderColor: '#ef4444', backgroundColor: 'transparent', tension: 0.2, pointRadius: 2 },
+                        { label: 'Ping (ms)', data: ping, borderColor: '#06b6d4', backgroundColor: 'transparent', tension: 0.2, pointRadius: 2 },
+                        { label: 'Jitter (ms)', data: jitter, borderColor: '#facc15', backgroundColor: 'transparent', tension: 0.2, pointRadius: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { labels: { color: '#e2e8f0', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', maxRotation: 45, autoSkip: true, font: { size: 9 } } },
+                        y: { ticks: { color: '#94a3b8' }, beginAtZero: true }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error(`Erro no histórico de ${machineName}:`, error);
+        }
+    }
+
+    async function loadMachines() {
+        try {
+            const response = await fetch('/machines');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const machines = await response.json();
+
+            const container = document.getElementById('machines');
+            if (!container) return;
+
+            // Contagem de máquinas críticas (CPU > 80% ou packet loss > 10%)
+            let critical = 0;
+            machines.forEach(m => {
+                if ((m.cpu || 0) > 80 || (m.packet_loss || 0) > 10) critical++;
+            });
+            document.getElementById('criticalMachines').innerText = critical;
+
+            // Aplica classe danger no KPI se houver críticas
+            const kpiDiv = document.getElementById('criticalKpi');
+            if (critical > 0) kpiDiv.classList.add('danger');
+            else kpiDiv.classList.remove('danger');
+
+            // Gera o HTML dos cards
+            container.innerHTML = machines.map(m => {
+                const safeId = sanitizeId(m.machine || 'unknown');
+
+                // Classes para os status (usando .ok / .alert do CSS)
+                const cpuClass = (m.cpu > 80) ? 'alert' : 'ok';
+                const pingClass = (m.ping > 100) ? 'alert' : 'ok';
+                const jitterClass = (m.jitter > 30) ? 'alert' : 'ok';
+                const lossClass = (m.packet_loss > 5) ? 'alert' : 'ok';
+                const voipStatusClass = (m.voip_status === 'Ruim' || m.voip_status === 'ruim') ? 'alert' : 'ok';
+                const voipScoreClass = (m.voip_score < 70) ? 'alert' : 'ok';
+                const onlineClass = m.online ? 'ok' : 'alert';
+                const ramClass = (m.memory > 90) ? 'alert' : 'ok';
+                const diskClass = (m.disk > 90) ? 'alert' : 'ok';
+
+                return `
+                    <div class="card">
+                        <h2>🖥️ ${escapeHtml(m.machine)}</h2>
+                        <canvas id="chart-${safeId}" width="400" height="200"></canvas>
+
+                        <p>👤 Usuário: <strong>${escapeHtml(m.username || '—')}</strong></p>
+
+                        <p>💻 CPU: <span class="${cpuClass}">${m.cpu}%</span></p>
+                        <div class="bar"><div style="width:${m.cpu}%; background:#ef4444;"></div></div>
+
+                        <p>🧠 RAM: <span class="${ramClass}">${m.memory}%</span></p>
+                        <div class="bar"><div style="width:${m.memory}%; background:#f97316;"></div></div>
+
+                        <p>💾 Disco: <span class="${diskClass}">${m.disk}%</span></p>
+                        <div class="bar"><div style="width:${m.disk}%; background:#06b6d4;"></div></div>
+
+                        <hr>
+
+                        <p>🌐 Ping: <span class="${pingClass}">${m.ping} ms</span></p>
+                        <p>📶 Jitter: <span class="${jitterClass}">${m.jitter || 0} ms</span></p>
+                        <p>📉 Packet Loss: <span class="${lossClass}">${m.packet_loss || 0}%</span></p>
+                        <p>📞 VoIP: <span class="${voipStatusClass}">${escapeHtml(m.voip_status || 'Normal')}</span></p>
+                        <p>🎙️ Score VoIP: <span class="${voipScoreClass}">${m.voip_score ?? '—'}</span></p>
+                        <p>🧠 IA / Anomalia: <span>${escapeHtml(m.anomaly || 'Nenhuma')}</span></p>
+                        <p>🟢 Status: <span class="${onlineClass}">${m.online ? 'ONLINE' : 'OFFLINE'}</span></p>
+
+                        <small>📅 Atualizado: ${escapeHtml(m.timestamp || new Date().toLocaleString())}</small>
+                    </div>
+                `;
+            }).join('');
+
+            // Carrega histórico APENAS uma vez por máquina (somente se endpoint existir)
+            for (const m of machines) {
+                const safeId = sanitizeId(m.machine);
+                if (!loadedHistory.has(safeId) && m.machine) {
+                    loadedHistory.add(safeId);
+                    await loadHistory(m.machine);
+                }
+            }
+
+        } catch (error) {
+            console.error('Erro ao buscar máquinas:', error);
+            document.getElementById('machines').innerHTML = '<div class="card" style="grid-column:1/-1; text-align:center;">❌ Erro ao conectar com a API. Verifique o backend.</div>';
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // Inicia o polling a cada 3 segundos (apenas dados atuais)
+    setInterval(loadMachines, 3000);
+    loadMachines();
+</script>
+</body>
+</html>
