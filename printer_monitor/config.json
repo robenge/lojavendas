@@ -1,0 +1,22 @@
+{
+    "printers": [
+        {
+            "ip": "192.168.1.10",
+            "location": "Barra Funda",
+            "site": "CCM"
+        },
+        {
+            "ip": "192.168.1.11",
+            "location": "Paulista",
+            "site": "CCM"
+        }
+    ],
+    "email": {
+        "server": "smtp.gmail.com",
+        "port": 587,
+        "sender": "",
+        "password": "",
+        "recipient": ""
+    },
+    "snmp_community": "public"
+}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+    body {
+        background-color: #0a0f1a;
+        color: #e0e0e0;
+    }
+    .card-futuristic {
+        background: linear-gradient(145deg, #111a2b, #0b101f);
+        border: 1px solid #2a3a5c;
+        border-radius: 12px;
+        color: #ccc;
+        transition: all 0.3s ease;
+    }
+    .card-futuristic.alarm-active {
+        animation: siren-glow 1s infinite alternate;
+        border-color: #ff4444 !important;
+        box-shadow: 0 0 15px rgba(255,0,0,0.4);
+    }
+    @keyframes siren-glow {
+        0% { box-shadow: 0 0 10px red; }
+        50% { box-shadow: 0 0 25px red, 0 0 40px orange; }
+        100% { box-shadow: 0 0 10px red; }
+    }
+    .toner-bar-bg { background-color: #1e2a3a; border-radius: 10px; height: 18px; overflow: hidden; }
+    .toner-bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+    .status-online { color: #4caf50; }
+    .status-offline { color: #f44336; }
+    .chart-container {
+        background: #111a2b;
+        border: 1px solid #2a3a5c;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .badge-alarm {
+        animation: blink 1s infinite;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3 align-items-center">
+    <div class="col"><h3 class="fw-bold" style="color: #4da6ff;">Painel de Monitoramento</h3></div>
+    <div class="col-auto">
+        <input type="search" id="search-input" class="form-control bg-dark text-light border-secondary" placeholder="Buscar...">
+    </div>
+</div>
+
+<!-- Cards das impressoras -->
+<div id="cards-container"></div>
+
+<!-- Gráficos (Plotly) -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <div id="status-pie-chart" style="height: 300px;"></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <div id="toner-bar-chart" style="height: 300px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let autoRefreshInterval = 30000;
+let printersData = [];
+
+function fetchPrinters() {
+    fetch('/api/printers')
+        .then(res => res.json())
+        .then(data => {
+            printersData = data;
+            renderCards(data);
+            renderCharts(data);
+        });
+}
+
+function renderCards(printers) {
+    const container = document.getElementById('cards-container');
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let html = '<div class="row">';
+    const filtered = printers.filter(p => 
+        (p.ip||'').includes(search) || 
+        (p.location||'').toLowerCase().includes(search) || 
+        (p.site||'').toLowerCase().includes(search)
+    );
+
+    filtered.forEach(p => {
+        let statusClass = p.status === 'online' ? 'status-online' : 'status-offline';
+        let statusText = p.status === 'online' ? 'ONLINE' : (p.status.startsWith('online') ? p.status.toUpperCase() : 'OFFLINE');
+        
+        // Determina se há alarmes críticos (que merecem sirene)
+        let criticalErrors = (p.errors || []).filter(e => e !== 'offline');
+        let alarmClass = criticalErrors.length > 0 ? 'alarm-active' : '';
+        
+        let errorBadges = '';
+        (p.errors || []).forEach(err => {
+            if (err === 'offline') return;
+            let badgeClass = 'bg-danger badge-alarm'; // todos piscam no modo alarme
+            if (err.includes('_low')) badgeClass = 'bg-warning text-dark';
+            errorBadges += `<span class="badge ${badgeClass} me-1">${err.replace(/_/g, ' ')}</span>`;
+        });
+
+        let toner = p.toner_black;
+        let tonerHtml = '';
+        if (toner !== null && toner !== undefined) {
+            let barColor = toner <= 10 ? '#ff4444' : (toner <= 20 ? '#ffaa00' : '#4caf50');
+            tonerHtml = `
+                <small>Toner Preto:</small>
+                <div class="toner-bar-bg">
+                    <div class="toner-bar-fill" style="width:${toner}%; background-color:${barColor};"></div>
+                </div>
+                <small class="float-end">${toner}%</small>`;
+        } else {
+            tonerHtml = '<small class="text-muted">Toner: N/D</small>';
+        }
+
+        html += `
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card card-futuristic h-100 p-3 ${alarmClass}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">${p.ip}</span>
+                    <span class="${statusClass} fw-bold small">${statusText}</span>
+                </div>
+                <div class="mt-2 small">${p.location || 'N/A'} | ${p.site || 'N/A'}</div>
+                <div class="mt-1">${errorBadges}</div>
+                <div class="mt-2">${tonerHtml}</div>
+                <div class="mt-2 small text-muted">Contador: ${p.page_count || 'N/D'} pág.</div>
+                <div class="small text-muted">${p.last_update || 'Nunca'}</div>
+            </div>
+        </div>`;
+    });
+
+    if (filtered.length === 0) {
+        html += '<div class="col-12 text-muted">Nenhuma impressora encontrada.</div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderCharts(printers) {
+    // Pizza de status
+    let online = printers.filter(p => p.status === 'online').length;
+    let offline = printers.length - online;
+    let pieData = [{
+        values: [online, offline],
+        labels: ['Online', 'Offline'],
+        type: 'pie',
+        hole: 0.4,
+        marker: { colors: ['#4caf50', '#f44336'] }
+    }];
+    let pieLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ccc' },
+        margin: { t: 20, b: 20 }
+    };
+    Plotly.newPlot('status-pie-chart', pieData, pieLayout, { responsive: true });
+
+    // Barras de toner preto
+    let tonerLabels = [];
+    let tonerValues = [];
+    printers.forEach(p => {
+        if (p.toner_black !== null && p.toner_black !== undefined) {
+            tonerLabels.push(p.ip + ' (' + (p.location||'') + ')');
+            tonerValues.push(p.toner_black);
+        }
+    });
+    let barData = [{
+        x: tonerLabels,
+        y: tonerValues,
+        type: 'bar',
+        marker: { color: '#4da6ff' }
+    }];
+    let barLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ccc' },
+        margin: { t: 20, b: 80 },
+        yaxis: { range: [0, 100], title: 'Nível de Toner (%)' }
+    };
+    Plotly.newPlot('toner-bar-chart', barData, barLayout, { responsive: true });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPrinters();
+    setInterval(fetchPrinters, autoRefreshInterval);
+    document.getElementById('search-input').addEventListener('input', () => renderCards(printersData));
+});
+</script>
+{% endblock %}
