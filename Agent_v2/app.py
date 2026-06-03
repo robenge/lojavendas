@@ -1,4 +1,6 @@
-﻿from flask import Flask, render_template, jsonify, request, redirect, url_for
+﻿print("=== Iniciando aplicação Flask ===")
+
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from urllib.parse import unquote
 import json
@@ -9,13 +11,13 @@ CONFIG_FILE = 'config.json'
 USERS_FILE = 'users.json'
 
 app = Flask(__name__)
-app.secret_key = 'sua-chave-secreta-aqui'  # Altere para algo seguro
+app.secret_key = 'sua-chave-secreta-aqui'  # Altere
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# ----- Gerenciamento de usuários (JSON) -----
+# ----- Gerenciamento de usuários -----
 def load_users():
     try:
         with open(USERS_FILE, 'r', encoding='utf-8') as f:
@@ -41,7 +43,7 @@ def load_user(user_id):
         return User(user_id)
     return None
 
-# ----- Configuração (impressoras, email, snmp) -----
+# ----- Configuração -----
 def load_config():
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
@@ -57,7 +59,7 @@ def save_config(config):
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=4)
 
-# ----- Inicia o monitor (thread) -----
+# ----- Inicia o monitor -----
 PRINTERS_DATA = {}
 data_lock = threading.Lock()
 config = load_config()
@@ -71,7 +73,6 @@ monitor.start()
 
 # ========== ROTAS ==========
 
-# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -88,37 +89,39 @@ def login():
             return render_template('login.html', error='Credenciais inválidas')
     return render_template('login.html')
 
-# Logout
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('dashboard'))
 
-# Dashboard (aberto)
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
-# Admin (protegido)
 @app.route('/admin')
 @login_required
 def admin_page():
     return render_template('admin.html', config=load_config())
 
-# Raiz redireciona
 @app.route('/')
 def index():
     return redirect(url_for('dashboard'))
 
-# ========== APIs PÚBLICAS (para o dashboard) ==========
+# ========== APIs ==========
 @app.route('/api/printers')
 def api_printers():
     with data_lock:
         printers = list(PRINTERS_DATA.values())
     return jsonify(printers)
 
-# ========== APIs ADMINISTRATIVAS (protegidas) ==========
+@app.route('/api/history')
+def api_history():
+    # Retorna o histórico de eventos persistidos
+    with monitor.lock:
+        history_copy = list(monitor.history)
+    return jsonify(history_copy)
+
 @app.route('/api/printers/add', methods=['POST'])
 @login_required
 def api_add_printer():
@@ -139,7 +142,7 @@ def api_add_printer():
 @app.route('/api/printers/remove/<path:ip>', methods=['DELETE'])
 @login_required
 def api_remove_printer(ip):
-    ip = unquote(ip)  # decodifica caracteres especiais
+    ip = unquote(ip)
     config = load_config()
     new_list = [p for p in config['printers'] if p['ip'] != ip]
     if len(new_list) == len(config['printers']):
@@ -149,7 +152,6 @@ def api_remove_printer(ip):
     monitor.reload_config(config)
     return jsonify({'success': True})
 
-# Upload de arquivo .txt com IPs
 @app.route('/api/printers/upload', methods=['POST'])
 @login_required
 def api_upload_printers():
@@ -182,7 +184,6 @@ def api_upload_printers():
     monitor.reload_config(config)
     return jsonify({'success': True, 'added': added})
 
-# Configuração de e-mail
 @app.route('/api/email', methods=['POST'])
 @login_required
 def api_save_email():
@@ -199,7 +200,6 @@ def api_save_email():
     monitor.update_email_config(config['email'])
     return jsonify({'success': True})
 
-# Configuração da comunidade SNMP
 @app.route('/api/snmp', methods=['POST'])
 @login_required
 def api_save_snmp():
@@ -211,7 +211,6 @@ def api_save_snmp():
     monitor.update_snmp_community(community)
     return jsonify({'success': True})
 
-# Gerenciamento de usuários
 @app.route('/api/users')
 @login_required
 def api_get_users():
@@ -246,4 +245,5 @@ def api_remove_user(username):
     return jsonify({'success': True})
 
 if __name__ == '__main__':
+    print("=== Servidor Flask rodando em http://0.0.0.0:8050 ===")
     app.run(debug=True, host='0.0.0.0', port=8050)
