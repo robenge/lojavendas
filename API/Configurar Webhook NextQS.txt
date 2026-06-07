@@ -1,0 +1,29 @@
+🔗 Configurar Webhook NextQS
+
+Endpoint:
+
+POST /v1/organization/webhooks
+Exemplo PowerShell
+$token = "SEU_TOKEN"
+
+$headers = @{
+    Authorization = "Bearer $token"
+    "Content-Type" = "application/json"
+}
+
+$body = @{
+
+    endpoint = "SUA_URL_APPS_SCRIPT"
+
+    events = @(
+        "end_service",
+        "no_show"
+    )
+
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+    -Uri "https://api.nextqs.com/v1/organization/webhooks" `
+    -Method POST `
+    -Headers $headers `
+    -Body $body
