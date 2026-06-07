@@ -1,0 +1,18 @@
+$token = "OfYcAyPSbfJFFDU3n-JSO61bfTZQcmW_fZs0KBFjlohjZYbumdazlq1TTKVd3Nqm"
+
+$headers = @{
+    Authorization = "Bearer $token"
+}
+
+Invoke-RestMethod `
+    -Uri "https://api.nextqs.com/v1/organization/sites" `
+    -Method GET `
+    -Headers $headers
+
+    _id                      label
+---                      -----
+6310caa7c97053fd4b06a457 ESPAÇO SAÚDE - BARRA FUNDA
+6310ca44c97053fd4b06a44d ESPAÇO SAÚDE - MATRIZ
+6310cafc5a1723d5cc06ad53 RIBEIRO - RH
+63a07b7b2fe532fe9604adfc WORKPLACE - BARRA FUNDA
+63c005bfe47430b5e6072d91 WORKPLACE - MATRIZ

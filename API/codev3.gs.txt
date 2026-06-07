@@ -1,0 +1,928 @@
+# Code.gs (COMPLETO PRODUÇÃO)
+
+/*
+==================================================
+CONFIGURAÇÕES
+==================================================
+*/
+
+const NEXTQS_URL =
+  "https://api.nextqs.com/v1"
+
+const NEXTQS_TOKEN =
+  "SEU_TOKEN"
+
+
+/*
+==================================================
+SITES MONITORADOS
+==================================================
+*/
+
+const SITE_IDS = [
+
+  "63a07b7b2fe532fe9604adfc",
+
+  "63c005bfe47430b5e6072d91"
+]
+
+
+/*
+==================================================
+WEBHOOK GOOGLE CHAT
+==================================================
+*/
+
+const WEBHOOK_GOOGLE_CHAT = ""
+
+
+/*
+==================================================
+UNIDADES MONITORADAS
+==================================================
+*/
+
+const UNIDADES_PERMITIDAS = [
+
+  "WORKPLACE - MATRIZ",
+
+  "WORKPLACE - BARRA FUNDA"
+]
+
+
+/*
+==================================================
+DASHBOARD
+==================================================
+*/
+function doGet() {
+
+  return HtmlService
+    .createTemplateFromFile("index")
+    .evaluate()
+    .setTitle("NEXTQS ENTERPRISE")
+    .setXFrameOptionsMode(
+      HtmlService.XFrameOptionsMode.ALLOWALL
+    )
+}
+
+
+/*
+==================================================
+INCLUDE HTML
+==================================================
+*/
+function include(nome) {
+
+  return HtmlService
+    .createHtmlOutputFromFile(nome)
+    .getContent()
+}
+
+
+/*
+==================================================
+VALIDAR UNIDADE
+==================================================
+*/
+function atendimentoPermitido(item) {
+
+  const unidade =
+    item.site_label || ""
+
+  return UNIDADES_PERMITIDAS
+    .includes(unidade)
+}
+
+
+/*
+==================================================
+HEADERS API
+==================================================
+*/
+function getHeaders() {
+
+  return {
+
+    Authorization:
+      "Bearer " + NEXTQS_TOKEN,
+
+    "Content-Type":
+      "application/json"
+  }
+}
+
+
+/*
+==================================================
+WEBHOOK NEXTQS
+==================================================
+*/
+function doPost(e) {
+
+  try {
+
+    /*
+    SEGURANÇA
+    */
+    if (!e || !e.postData) {
+
+      return ContentService
+        .createTextOutput("SEM POSTDATA")
+    }
+
+    /*
+    JSON
+    */
+    const item =
+      JSON.parse(e.postData.contents)
+
+    console.log(
+      JSON.stringify(item, null, 2)
+    )
+
+
+    /*
+    VALIDAR UNIDADE
+    */
+    if (!atendimentoPermitido(item)) {
+
+      console.log(
+        "UNIDADE IGNORADA"
+      )
+
+      return ContentService
+        .createTextOutput("IGNORADO")
+    }
+
+
+    /*
+    SALVAR
+    */
+    salvarAtendimento(item)
+
+
+    /*
+    VALIDAR CLIENTE
+    */
+    validarCliente(item)
+
+    return ContentService
+      .createTextOutput(
+
+        JSON.stringify({
+
+          success: true
+        })
+      )
+      .setMimeType(
+        ContentService.MimeType.JSON
+      )
+
+  } catch (erro) {
+
+    console.log(erro)
+
+    registrarLog(
+      "ERRO WEBHOOK",
+      erro.toString()
+    )
+
+    return ContentService
+      .createTextOutput(
+
+        JSON.stringify({
+
+          success: false,
+
+          erro: erro.toString()
+        })
+      )
+      .setMimeType(
+        ContentService.MimeType.JSON
+      )
+  }
+}
+
+
+/*
+==================================================
+CRIAR ABA
+==================================================
+*/
+function obterOuCriarAba(nomeAba) {
+
+  const planilha =
+    SpreadsheetApp
+      .getActiveSpreadsheet()
+
+  let aba =
+    planilha.getSheetByName(nomeAba)
+
+  if (!aba) {
+
+    aba =
+      planilha.insertSheet(nomeAba)
+  }
+
+  return aba
+}
+
+
+/*
+==================================================
+SALVAR ATENDIMENTO
+==================================================
+*/
+function salvarAtendimento(item) {
+
+  const aba =
+    obterOuCriarAba("Dados")
+
+  /*
+  CABEÇALHO
+  */
+  if (aba.getLastRow() === 0) {
+
+    aba.appendRow([
+
+      "Data Registro",
+
+      "Origin ID",
+
+      "Unidade",
+
+      "Fila",
+
+      "Senha",
+
+      "Cliente",
+
+      "Gerado Em",
+
+      "Chamado Por",
+
+      "No Show Em",
+
+      "Status",
+
+      "Início Atendimento",
+
+      "Fim Atendimento"
+    ])
+  }
+
+  /*
+  ORIGIN ID
+  */
+  const originId =
+    item.origin_id || ""
+
+  /*
+  DADOS
+  */
+  const dados =
+    aba.getDataRange()
+      .getValues()
+
+  /*
+  DUPLICIDADE
+  */
+  for (let i = 1; i < dados.length; i++) {
+
+    if (dados[i][1] == originId) {
+
+      console.log(
+        "REGISTRO DUPLICADO"
+      )
+
+      return
+    }
+  }
+
+  /*
+  CHAMADO POR
+  */
+  const chamadoPor =
+
+    (item.service_desk_label || "") +
+
+    " " +
+
+    (item.service_desk_number || "")
+
+  /*
+  SALVAR
+  */
+  aba.appendRow([
+
+    new Date(),
+
+    originId,
+
+    item.site_label || "",
+
+    item.queue_label || "",
+
+    item.ticket || "",
+
+    item.user_label || "",
+
+    item.ticket_generated_at || "",
+
+    chamadoPor,
+
+    item.ticket_last_call_at || "",
+
+    item.status || "",
+
+    item.service_started_at || "",
+
+    item.service_ended_at || ""
+  ])
+}
+
+
+/*
+==================================================
+VALIDAR CLIENTE
+==================================================
+*/
+function validarCliente(item) {
+
+  /*
+  SOMENTE FINALIZADO
+  */
+  if (item.status != 3) {
+
+    return
+  }
+
+  /*
+  IGNORA NO SHOW
+  */
+  if (item.ticket_last_call_at) {
+
+    return
+  }
+
+  /*
+  CLIENTE
+  */
+  const cliente =
+
+    String(
+      item.user_label || ""
+    ).trim()
+
+  /*
+  SOMENTE NÚMEROS
+  */
+  const regex = /^\d+$/
+
+  let erro = ""
+
+  /*
+  CLIENTE VAZIO
+  */
+  if (!cliente) {
+
+    erro = "CLIENTE VAZIO"
+  }
+
+  /*
+  CLIENTE INVÁLIDO
+  */
+  else if (!regex.test(cliente)) {
+
+    erro = "CLIENTE INVÁLIDO"
+  }
+
+  /*
+  ALERTA
+  */
+  if (erro) {
+
+    salvarAlerta(item, erro)
+
+    enviarGoogleChat(item, erro)
+  }
+}
+
+
+/*
+==================================================
+SALVAR ALERTA
+==================================================
+*/
+function salvarAlerta(item, erro) {
+
+  const aba =
+    obterOuCriarAba("Alertas")
+
+  /*
+  CABEÇALHO
+  */
+  if (aba.getLastRow() === 0) {
+
+    aba.appendRow([
+
+      "Data",
+
+      "Erro",
+
+      "Origin ID",
+
+      "Unidade",
+
+      "Fila",
+
+      "Senha",
+
+      "Cliente"
+    ])
+  }
+
+  /*
+  SALVAR
+  */
+  aba.appendRow([
+
+    new Date(),
+
+    erro,
+
+    item.origin_id || "",
+
+    item.site_label || "",
+
+    item.queue_label || "",
+
+    item.ticket || "",
+
+    item.user_label || ""
+  ])
+}
+
+
+/*
+==================================================
+GOOGLE CHAT
+==================================================
+*/
+function enviarGoogleChat(item, erro) {
+
+  if (
+
+    !WEBHOOK_GOOGLE_CHAT ||
+
+    WEBHOOK_GOOGLE_CHAT == ""
+
+  ) {
+
+    console.log(
+      "WEBHOOK NÃO CONFIGURADO"
+    )
+
+    return
+  }
+
+  const mensagem = {
+
+    text:
+
+      "⚠️ ALERTA NEXTQS\n\n" +
+
+      "Erro: " + erro + "\n\n" +
+
+      "Unidade: " +
+      (item.site_label || "") + "\n" +
+
+      "Fila: " +
+      (item.queue_label || "") + "\n" +
+
+      "Senha: " +
+      (item.ticket || "") + "\n" +
+
+      "Cliente: " +
+      (item.user_label || "")
+  }
+
+  UrlFetchApp.fetch(
+
+    WEBHOOK_GOOGLE_CHAT,
+
+    {
+
+      method: "post",
+
+      contentType:
+        "application/json",
+
+      payload:
+        JSON.stringify(mensagem)
+    }
+  )
+}
+
+
+/*
+==================================================
+FILA TEMPO REAL
+MULTI SITE
+==================================================
+*/
+function obterFilaTempoReal() {
+
+  try {
+
+    let resultado = []
+
+    /*
+    PERCORRER SITES
+    */
+    SITE_IDS.forEach(siteId => {
+
+      const url =
+
+        NEXTQS_URL +
+
+        "/organization/reports/service/queue/" +
+
+        siteId
+
+      const resposta =
+        UrlFetchApp.fetch(
+
+          url,
+
+          {
+
+            method: "get",
+
+            headers: getHeaders(),
+
+            muteHttpExceptions: true
+          }
+        )
+
+      const dados =
+        JSON.parse(
+          resposta.getContentText()
+        )
+
+      /*
+      ARRAY
+      */
+      if (Array.isArray(dados)) {
+
+        resultado =
+          resultado.concat(dados)
+      }
+    })
+
+    return resultado
+
+  } catch (erro) {
+
+    registrarLog(
+      "ERRO FILA",
+      erro.toString()
+    )
+
+    return []
+  }
+}
+
+
+/*
+==================================================
+SERVIÇOS ABERTOS
+MULTI SITE
+==================================================
+*/
+function obterServicosAbertos() {
+
+  try {
+
+    let resultado = []
+
+    /*
+    PERCORRER SITES
+    */
+    SITE_IDS.forEach(siteId => {
+
+      const url =
+
+        NEXTQS_URL +
+
+        "/organization/reports/service/opened/" +
+
+        siteId +
+
+        "?limit=100&page=1"
+
+      const resposta =
+        UrlFetchApp.fetch(
+
+          url,
+
+          {
+
+            method: "get",
+
+            headers: getHeaders(),
+
+            muteHttpExceptions: true
+          }
+        )
+
+      const dados =
+        JSON.parse(
+          resposta.getContentText()
+        )
+
+      /*
+      ARRAY
+      */
+      if (Array.isArray(dados)) {
+
+        resultado =
+          resultado.concat(dados)
+      }
+    })
+
+    return resultado
+
+  } catch (erro) {
+
+    registrarLog(
+      "ERRO SERVICOS",
+      erro.toString()
+    )
+
+    return []
+  }
+}
+
+
+/*
+==================================================
+INDICADORES
+==================================================
+*/
+function obterIndicadores() {
+
+  const aba =
+    SpreadsheetApp
+      .getActiveSpreadsheet()
+      .getSheetByName("Dados")
+
+  if (!aba) {
+
+    return {}
+  }
+
+  const dados =
+    aba.getDataRange()
+      .getValues()
+
+  let total = 0
+
+  let invalidos = 0
+
+  let noshow = 0
+
+  let unidades = {}
+
+  for (let i = 1; i < dados.length; i++) {
+
+    total++
+
+    const unidade =
+      dados[i][2]
+
+    const cliente =
+      String(
+        dados[i][5] || ""
+      ).trim()
+
+    const noShow =
+      dados[i][8]
+
+    if (!unidades[unidade]) {
+
+      unidades[unidade] = 0
+    }
+
+    unidades[unidade]++
+
+    if (noShow) {
+
+      noshow++
+    }
+
+    const regex = /^\d+$/
+
+    if (
+
+      !cliente ||
+
+      !regex.test(cliente)
+
+    ) {
+
+      if (!noShow) {
+
+        invalidos++
+      }
+    }
+  }
+
+  return {
+
+    total,
+
+    invalidos,
+
+    noshow,
+
+    unidades
+  }
+}
+
+
+/*
+==================================================
+RELATÓRIO DIÁRIO
+==================================================
+*/
+function enviarRelatorioDiario() {
+
+  const planilha =
+    SpreadsheetApp
+      .getActiveSpreadsheet()
+
+  const abaAlertas =
+    planilha.getSheetByName("Alertas")
+
+  const abaEmails =
+    planilha.getSheetByName("Emails")
+
+  if (!abaAlertas || !abaEmails) {
+
+    return
+  }
+
+  const alertas =
+    abaAlertas.getDataRange()
+      .getValues()
+
+  const emails =
+    abaEmails.getDataRange()
+      .getValues()
+
+  const hoje =
+    Utilities.formatDate(
+
+      new Date(),
+
+      Session.getScriptTimeZone(),
+
+      "yyyy-MM-dd"
+    )
+
+  let total = 0
+
+  let resumo = ""
+
+  for (let i = 1; i < alertas.length; i++) {
+
+    const linha = alertas[i]
+
+    const data =
+      Utilities.formatDate(
+
+        new Date(linha[0]),
+
+        Session.getScriptTimeZone(),
+
+        "yyyy-MM-dd"
+      )
+
+    if (data != hoje) {
+
+      continue
+    }
+
+    total++
+
+    resumo +=
+
+      `
+      <tr>
+
+        <td>${linha[1]}</td>
+
+        <td>${linha[3]}</td>
+
+        <td>${linha[4]}</td>
+
+        <td>${linha[5]}</td>
+
+      </tr>
+      `
+  }
+
+  if (total == 0) {
+
+    return
+  }
+
+  const html = `
+
+    <h2>
+      📊 RELATÓRIO NEXTQS
+    </h2>
+
+    <p>
+      Total Alertas:
+      <b>${total}</b>
+    </p>
+
+    <table border="1"
+           cellpadding="5"
+           cellspacing="0">
+
+      <tr>
+
+        <th>Erro</th>
+        <th>Unidade</th>
+        <th>Fila</th>
+        <th>Senha</th>
+
+      </tr>
+
+      ${resumo}
+
+    </table>
+  `
+
+  for (let i = 1; i < emails.length; i++) {
+
+    const email =
+      emails[i][0]
+
+    if (!email) {
+
+      continue
+    }
+
+    GmailApp.sendEmail(
+
+      email,
+
+      "📊 RELATÓRIO NEXTQS",
+
+      "HTML",
+
+      {
+
+        htmlBody: html
+      }
+    )
+  }
+}
+
+
+/*
+==================================================
+LOGS
+==================================================
+*/
+function registrarLog(tipo, mensagem) {
+
+  const aba =
+    obterOuCriarAba("Logs")
+
+  if (aba.getLastRow() === 0) {
+
+    aba.appendRow([
+
+      "Data",
+
+      "Tipo",
+
+      "Mensagem"
+    ])
+  }
+
+  aba.appendRow([
+
+    new Date(),
+
+    tipo,
+
+    mensagem
+  ])
+}
