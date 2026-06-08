@@ -1,3 +1,0 @@
-192.168.1.10, Barra Funda, CCM
-192.168.1.11, Paulista, CCM
-10.0.0.50, matriz
