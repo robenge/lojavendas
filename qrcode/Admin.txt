@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚙️ Painel Admin</title>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f7fafc; min-height: 100vh; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    /* Header */
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 30px; border-radius: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .header .logo h1 { font-size: 24px; font-weight: 700; }
+    .header .logo span { font-size: 13px; opacity: 0.8; }
+    .header .user-info { display: flex; align-items: center; gap: 15px; }
+    .header .user-info .user-name { font-weight: 600; }
+    .btn { padding: 8px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-danger { background: #fc8181; color: white; }
+    .btn-danger:hover { background: #f56565; transform: translateY(-2px); }
+    .btn-success { background: #48bb78; color: white; }
+    .btn-success:hover { background: #38a169; transform: translateY(-2px); }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+    .btn-warning { background: #ed8936; color: white; }
+    .btn-warning:hover { background: #dd6b20; transform: translateY(-2px); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    /* Tabs */
+    .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap; }
+    .tab-btn { padding: 10px 20px; border: none; background: transparent; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: #718096; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+    .tab-btn:hover { background: #f7fafc; }
+    .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    /* Stats Cards */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: white; padding: 18px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); text-align: center; transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+    .stat-card .number { font-size: 30px; font-weight: 700; color: #2d3748; }
+    .stat-card .label { font-size: 13px; color: #718096; margin-top: 3px; }
+    .stat-card .icon { font-size: 24px; margin-bottom: 3px; display: block; }
+    .stat-card.purple .number { color: #764ba2; }
+    .stat-card.green .number { color: #48bb78; }
+    .stat-card.orange .number { color: #ed8936; }
+    .stat-card.blue .number { color: #4299e1; }
+    /* Progress */
+    .progress-container { background: white; padding: 18px 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin-bottom: 25px; }
+    .progress-container .progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: #718096; }
+    .progress-container .progress-bar { width: 100%; height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .progress-container .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 10px; transition: width 0.5s ease; width: 0%; }
+    /* Tabelas */
+    .table-container { background: white; border-radius: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); overflow: hidden; margin-bottom: 25px; }
+    .table-header { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .table-header h2 { font-size: 18px; color: #2d3748; }
+    .table-header .search-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .table-header .search-box input, .table-header .search-box select { padding: 6px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.3s ease; }
+    .table-header .search-box input:focus, .table-header .search-box select:focus { border-color: #764ba2; }
+    .table-wrapper { overflow-x: auto; padding: 0 15px 15px 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead { background: #f7fafc; }
+    th { padding: 10px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #718096; font-weight: 600; letter-spacing: 0.3px; }
+    td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #2d3748; }
+    tr:hover { background: #f7fafc; }
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-badge.disponivel, .status-badge.Ativo { background: #c6f6d5; color: #22543d; }
+    .status-badge.lida { background: #fefcbf; color: #744210; }
+    .status-badge.arquivada { background: #e2e8f0; color: #4a5568; }
+    .status-badge.Inativo { background: #fed7d7; color: #9b2c2c; }
+    .btn-group-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .modal h2 { font-size: 22px; color: #2d3748; margin-bottom: 20px; }
+    .modal .form-group { margin-bottom: 15px; }
+    .modal .form-group label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+    .modal .form-group input, .modal .form-group textarea, .modal .form-group select { width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.3s ease; font-family: inherit; }
+    .modal .form-group textarea { min-height: 70px; resize: vertical; }
+    .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal .form-actions .btn { flex: 1; justify-content: center; }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 10px; color: white; font-weight: 600; font-size: 14px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); opacity: 0; transition: opacity 0.5s ease; z-index: 2000; max-width: 400px; }
+    .toast.show { opacity: 1; }
+    .toast.success { background: #48bb78; }
+    .toast.error { background: #fc8181; }
+    .empty-state { text-align: center; padding: 30px; color: #a0aec0; }
+    .empty-state .icon { font-size: 40px; display: block; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 20px; }
+    .loading .spinner { display: inline-block; width: 25px; height: 25px; border: 3px solid #e2e8f0; border-radius: 50%; border-top-color: #764ba2; animation: spin 1s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .logout-btn { background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: 6px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.3s ease; }
+    .logout-btn:hover { background: rgba(255, 255, 255, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <h1>⚙️ Painel Admin</h1>
+        <span>Gerencie suas mensagens motivacionais</span>
+      </div>
+      <div class="user-info">
+        <span class="user-name" id="userName">👤 Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" onclick="mudarTab('frases')">
+        <i class="fas fa-list"></i> Frases
+      </button>
+      <button class="tab-btn" onclick="mudarTab('usuarios')">
+        <i class="fas fa-users"></i> Usuários
+      </button>
+    </div>
+    
+    <!-- TAB: FRASES -->
+    <div id="tabFrases" class="tab-content active">
+      <!-- Stats -->
+      <div class="stats" id="stats">
+        <div class="stat-card purple">
+          <span class="icon">📚</span>
+          <div class="number" id="totalFrases">0</div>
+          <div class="label">Total de Frases</div>
+        </div>
+        <div class="stat-card green">
+          <span class="icon">✅</span>
+          <div class="number" id="frasesLidas">0</div>
+          <div class="label">Já Lidas</div>
+        </div>
+        <div class="stat-card orange">
+          <span class="icon">🎁</span>
+          <div class="number" id="surpresasRestantes">0</div>
+          <div class="label">Surpresas Restantes</div>
+        </div>
+        <div class="stat-card blue">
+          <span class="icon">📖</span>
+          <div class="number" id="totalLeituras">0</div>
+          <div class="label">Total de Leituras</div>
+        </div>
+      </div>
+      
+      <!-- Progresso -->
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Progresso de Leitura</span>
+          <span id="progressoTexto">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="fill" id="progressoBarra"></div>
+        </div>
+      </div>
+      
+      <!-- Tabela Frases -->
+      <div class="table-container">
+        <div class="table-header">
+          <h2><i class="fas fa-list"></i> Todas as Frases</h2>
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Buscar frase..." oninput="filtrarTabela()">
+            <select id="filtroStatus" onchange="filtrarTabela()">
+              <option value="todos">Todos os status</option>
+              <option value="Disponivel">Disponível</option>
+              <option value="Lida">Lida</option>
+              <option value="Arquivada">Arquivada</option>
+            </select>
+            <button class="btn btn-primary" onclick="abrirModalAdicionar()">
+              <i class="fas fa-plus"></i> Nova
+            </button>
+            <button class="btn btn-danger" onclick="resetarTodas()">
+              <i class="fas fa-redo"></i> Resetar
+            </button>
+          </div>
+        </div>
+        
+        <div class="table-wrapper">
+          <div id="loadingTabela" class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 8px; color: #718096; font-size: 14px;">Carregando frases...</p>
+          </div>
+          <div id="tabelaContainer" style="display: none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Frase</th>
+                  <th>Autor</th>
+                  <th>Status</th>
+                  <th>Leituras</th>
+                  <th>Última Leitura</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- TAB: USUÁRIOS -->
+    <div id="tabUsuarios" class="tab-content">
+      <div class="table-container">
+        <div class="table-header">
+          <h2><i class="fas fa-users"></i> Gerenciar Usuários</h2>
+          <button class="btn btn-primary" onclick="abrirModalUsuario()">
+            <i class="fas fa-plus"></i> Novo Usuário
+          </button>
+        </div>
+        <div class="table-wrapper">
+          <div id="loadingUsuarios" class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 8px; color: #718096; font-size: 14px;">Carregando usuários...</p>
+          </div>
+          <div id="tabelaUsuariosContainer" style="display: none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Nível</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaUsuarios"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL Frase -->
+  <div class="modal-overlay" id="modalFrase">
+    <div class="modal">
+      <h2 id="modalTitulo">📝 Nova Frase</h2>
+      <form id="formFrase" onsubmit="salvarFrase(event)">
+        <input type="hidden" id="fraseId">
+        
+        <div class="form-group">
+          <label for="fraseTexto">Frase *</label>
+          <textarea id="fraseTexto" required placeholder="Digite a frase motivacional..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="fraseAutor">Autor</label>
+          <input type="text" id="fraseAutor" placeholder="Nome do autor (opcional)">
+        </div>
+        
+        <div class="form-group">
+          <label for="fraseStatus">Status</label>
+          <select id="fraseStatus">
+            <option value="Disponivel">Disponível</option>
+            <option value="Lida">Lida</option>
+            <option value="Arquivada">Arquivada</option>
+          </select>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" onclick="fecharModal('modalFrase')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    let usuarioAtual = null;
+    
+    // ============================================
+    // A CORREÇÃO FICA AQUI: Proteção contra loop e erro de iframe.
+    // ============================================
+    window.onload = function() {
+      let usuarioSalvo = null;
+      
+      // Try-catch protege caso o navegador bloqueie acesso ao localStorage
+      try {
+        usuarioSalvo = localStorage.getItem('usuario_admin');
+      } catch (e) {
+        console.warn("Acesso ao localStorage bloqueado pelo navegador.");
+      }
+      
+      if (usuarioSalvo) {
+        try {
+          usuarioAtual = JSON.parse(usuarioSalvo);
+          document.getElementById('userName').textContent = '👤 ' + (usuarioAtual.nome || 'Admin');
+        } catch(e) {
+          try { localStorage.removeItem('usuario_admin'); } catch(err){}
+          redirecionarParaLogin();
+          return;
+        }
+      } else {
+        redirecionarParaLogin();
+        return;
+      }
+      
+      // Só carrega os dados se confirmou que está logado
+      carregarDados();
+    };
+
+    function redirecionarParaLogin() {
+      // Cria uma interface de bloqueio amigável.
+      // Caso o navegador impeça o redirecionamento automático (o que causa o travamento), o botão resolve!
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#2d3748;background:#f7fafc;text-align:center;padding:20px;">
+          <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
+          <h2 style="margin-bottom: 10px;">Acesso Restrito</h2>
+          <p style="margin-bottom: 25px; color: #718096; max-width: 320px;">Você precisa fazer login para acessar o painel administrativo.</p>
+          <a id="btnRedirecionar" href="#" target="_top" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3); transition: transform 0.2s;">
+            <i class="fas fa-sign-in-alt"></i> Ir para o Login
+          </a>
+        </div>
+      `;
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(function(url) {
+            const loginUrl = url + '?acao=login';
+            const btn = document.getElementById('btnRedirecionar');
+            btn.href = loginUrl;
+            
+            // Tenta clicar via código para redirecionar automaticamente.
+            // Se o navegador bloquear o redirecionamento automático silencioso, o botão físico estará na tela.
+            try { btn.click(); } catch(e) {}
+        }).getUrlBase();
+      } else {
+        const fallbackUrl = window.location.href.split('?')[0] + '?acao=login';
+        document.getElementById('btnRedirecionar').href = fallbackUrl;
+      }
+    }
+    
+    function logout() {
+      if (confirm('Tem certeza que deseja sair?')) {
+        try { localStorage.removeItem('usuario_admin'); } catch(e) {}
+        redirecionarParaLogin();
+      }
+    }
+    
+    function mudarTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+      const botoes = document.querySelectorAll('.tab-btn');
+      const mapa = { frases: 0, usuarios: 1 };
+      if (mapa[tab] !== undefined) botoes[mapa[tab]].classList.add('active');
+    }
+    
+    function mostrarToast(mensagem, tipo = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = mensagem;
+      toast.className = 'toast ' + tipo + ' show';
+      setTimeout(() => toast.className = 'toast', 3000);
+    }
+    
+    function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+    
+    function abrirModalAdicionar() {
+      document.getElementById('modalTitulo').textContent = '📝 Nova Frase';
+      document.getElementById('fraseId').value = '';
+      document.getElementById('fraseTexto').value = '';
+      document.getElementById('fraseAutor').value = '';
+      document.getElementById('fraseStatus').value = 'Disponivel';
+      document.getElementById('modalFrase').classList.add('active');
+    }
+    
+    function carregarDados() {
+      mostrarLoadingTabela(true);
+      
+      // Previne erro caso esteja rodando fora do ambiente do Google
+      if (typeof google === 'undefined' || !google.script) {
+        mostrarLoadingTabela(false);
+        mostrarToast('Erro: Conexão com o Google Script falhou.', 'error');
+        return;
+      }
+      
+      google.script.run
+        .withSuccessHandler(function(estatisticas) {
+          document.getElementById('totalFrases').textContent = estatisticas.total || 0;
+          document.getElementById('frasesLidas').textContent = estatisticas.lidas || 0;
+          document.getElementById('surpresasRestantes').textContent = estatisticas.disponiveis || 0;
+          document.getElementById('totalLeituras').textContent = estatisticas.totalLeituras || 0;
+          const progresso = estatisticas.total > 0 ? Math.round((estatisticas.lidas / estatisticas.total) * 100) : 0;
+          document.getElementById('progressoBarra').style.width = progresso + '%';
+          document.getElementById('progressoTexto').textContent = progresso + '%';
+        })
+        .getEstatisticas();
+      
+      google.script.run
+        .withSuccessHandler(function(frases) {
+          mostrarLoadingTabela(false);
+          renderizarTabelaFrases(frases);
+        })
+        .getTodasFrases();
+    }
+    
+    function mostrarLoadingTabela(ativo) {
+      document.getElementById('loadingTabela').style.display = ativo ? 'block' : 'none';
+      document.getElementById('tabelaContainer').style.display = ativo ? 'none' : 'block';
+    }
+    
+    function renderizarTabelaFrases(frases) {
+      const tbody = document.getElementById('tabelaBody');
+      tbody.innerHTML = '';
+      if (!frases || frases.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Nenhuma frase cadastrada.</p></div></td></tr>`;
+        return;
+      }
+      frases.forEach(function(frase) {
+        const tr = document.createElement('tr');
+        let dataFormatada = '-';
+        if (frase.UltimaLeitura) {
+          try {
+            const data = new Date(frase.UltimaLeitura);
+            dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+          } catch(e) {}
+        }
+        const statusClass = frase.Status ? frase.Status.toLowerCase() : '';
+        tr.innerHTML = `
+          <td><strong>#${frase.ID}</strong></td>
+          <td style="max-width: 200px; word-wrap: break-word;">${frase.Frase || '-'}</td>
+          <td>${frase.Autor || '-'}</td>
+          <td><span class="status-badge ${statusClass}">${frase.Status || 'Desconhecido'}</span></td>
+          <td style="text-align: center;">${frase.Contador || 0}</td>
+          <td style="font-size: 12px;">${dataFormatada}</td>
+          <td>
+            <div class="btn-group-actions">
+              <button class="btn btn-primary btn-sm" onclick="editarFrase(${frase.ID})"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-success btn-sm" onclick="marcarComoLida(${frase.ID})" ${frase.Status === 'Lida' ? 'disabled' : ''}><i class="fas fa-check"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="excluirFrase(${frase.ID})"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    function filtrarTabela() {
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+      const filterStatus = document.getElementById('filtroStatus').value;
+      const rows = document.getElementById('tabelaBody').getElementsByTagName('tr');
+      for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length <= 1) continue;
+        const frase = cells[1]?.textContent?.toLowerCase() || '';
+        const autor = cells[2]?.textContent?.toLowerCase() || '';
+        const status = cells[3]?.textContent?.trim() || '';
+        const matchSearch = frase.includes(searchText) || autor.includes(searchText);
+        const matchStatus = filterStatus === 'todos' || status === filterStatus;
+        row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+      }
+    }
+    
+    function editarFrase(id) {
+      google.script.run
+        .withSuccessHandler(function(frase) {
+          if (frase) {
+            document.getElementById('modalTitulo').textContent = '✏️ Editar Frase #' + id;
+            document.getElementById('fraseId').value = id;
+            document.getElementById('fraseTexto').value = frase.Frase || '';
+            document.getElementById('fraseAutor').value = frase.Autor || '';
+            document.getElementById('fraseStatus').value = frase.Status || 'Disponivel';
+            document.getElementById('modalFrase').classList.add('active');
+          }
+        })
+        .getFrasePorId(id);
+    }
+    
+    function salvarFrase(event) {
+      event.preventDefault();
+      const dados = {
+        ID: document.getElementById('fraseId').value || null,
+        Frase: document.getElementById('fraseTexto').value.trim(),
+        Autor: document.getElementById('fraseAutor').value.trim() || 'Desconhecido',
+        Status: document.getElementById('fraseStatus').value
+      };
+      
+      google.script.run
+        .withSuccessHandler(function(resultado) {
+          fecharModal('modalFrase');
+          mostrarToast(resultado.mensagem, 'success');
+          carregarDados();
+        })
+        .salvarFrase(dados);
+    }
+    
+    function marcarComoLida(id) {
+      if (!confirm('Marcar esta frase como lida?')) return;
+      google.script.run.withSuccessHandler(() => { mostrarToast('✅ Marcada como lida!', 'success'); carregarDados(); }).marcarComoLida(id);
+    }
+    
+    function excluirFrase(id) {
+      if (!confirm('⚠️ Tem certeza que deseja excluir esta frase permanentemente?')) return;
+      google.script.run.withSuccessHandler(() => { mostrarToast('🗑️ Frase excluída!', 'success'); carregarDados(); }).excluirFrase(id);
+    }
+    
+    function resetarTodas() {
+      if (!confirm('⚠️ Resetar TODAS as frases?')) return;
+      google.script.run.withSuccessHandler(() => { mostrarToast('🔄 Resetadas!', 'success'); carregarDados(); }).resetarFrases();
+    }
+  </script>
+</body>
+</html>
