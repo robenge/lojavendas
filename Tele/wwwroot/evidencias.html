@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Investigação de desempenho · Monitor Network</title>
+<link rel="stylesheet" href="style.css?v=13"><script src="evidencias.js?v=3" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Monitor de rede, início"><span class="brand-mark">M</span><span>MONITOR<span class="brand-sub">NETWORK OBSERVABILITY</span></span></a>
+  <nav class="top-actions"><a class="admin-link" href="/">← Painel</a><a class="admin-link" href="/dashboard.html">▥ Dashboard</a><a class="admin-link" href="/admin.html">⚙ Administração</a><span id="connection" role="status">Investigação</span></nav>
+</header>
+<main>
+  <div class="heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> ANÁLISE COMPARATIVA</p><h1>Investigação de desempenho</h1><p>Consumo medido nos serviços CrowdStrike Falcon e Trend Micro / TrendAI e condição da máquina no mesmo período.</p></div></div>
+  <div class="toolbar report-toolbar"><div class="report-periods"><button id="period1" type="button">24 horas</button><button id="period7" type="button">7 dias</button></div><div class="top-actions"><span id="updated" class="muted"></span><button id="refresh" class="primary-button" type="button">↻ Atualizar</button><button id="exportSummary" class="subtle-button" type="button">↓ Exportar resumo CSV</button></div></div>
+  <p id="error" class="status-message error" role="status"></p>
+  <section id="evidenceKpis" class="report-cards" aria-label="Resumo da coleta"></section>
+  <p class="report-note">A coleta começa quando o agente 1.3.0 (ou posterior) informar o PID dos serviços. Os números mostram associação temporal e não provam que o produto causou a lentidão. Serviços que compartilham um processo (por exemplo, svchost) são marcados porque o consumo não pode ser separado entre eles. Drivers de kernel podem aparecer como “System” e não ser atribuíveis ao processo do serviço.</p>
+  <section class="panel"><div class="section-title"><span class="section-icon">⌕</span><div><h2>Evidências por máquina</h2><p>Selecione uma linha para abrir a série temporal e exportar as amostras por minuto.</p></div></div><div id="evidenceTable" class="process-table"></div></section>
+  <section id="detailPanel" class="panel evidence-detail" hidden>
+    <div class="toolbar"><div class="section-title"><span class="section-icon">◷</span><div><h2 id="detailTitle">Série temporal</h2><p id="detailCaption"></p></div></div><div class="top-actions"><button id="comparePeers" type="button">Comparar pares</button><button id="downloadPdf" class="admin-primary" type="button">↓ Relatório PDF</button><button id="exportDetail" class="subtle-button" type="button">↓ CSV detalhado</button></div></div>
+    <canvas id="cpuChart" aria-label="CPU do produto comparada com CPU total da máquina"></canvas>
+    <div id="detailTable" class="process-table"></div>
+    <section id="peerComparison" class="peer-comparison" hidden>
+      <div class="toolbar"><div class="section-title"><span class="section-icon">⇄</span><div><h2>Comparação com máquinas parecidas</h2><p id="comparisonCaption"></p></div></div><div class="top-actions"><button id="downloadComparisonPdf" class="admin-primary" type="button">↓ Relatório comparativo PDF</button><button id="exportComparisonCsv" class="subtle-button" type="button">↓ CSV da comparação</button></div></div>
+      <p id="comparisonCriteria" class="report-note"></p>
+      <div id="comparisonTable" class="process-table"></div>
+      <p class="admin-note">As médias usam o mesmo intervalo de calendário. Diferenças de usuário, horário, aplicativos e tarefa podem alterar os resultados; o comparativo ajuda a priorizar investigação e não prova causalidade.</p>
+    </section>
+  </section>
+  <footer><span class="footer-mark">M</span><span>MONITOR NETWORK</span><span class="footer-separator">·</span>Evidência observacional com dados coletados a cada cinco segundos · © Robson Oliveira — Gerência de Serviços de TI</footer>
+</main>
+</body></html>
